@@ -87,7 +87,7 @@ app.post("/room",middleware, async(req, res) => {
 
 })
 
-app.get("/chats/:roomId", middleware, async(req, res) =>{
+app.get("/chats/:roomId", async(req, res) =>{
   const roomId = Number(req.params.roomId);
 
   const messages = await db.query.chats.findMany({
@@ -98,6 +98,25 @@ app.get("/chats/:roomId", middleware, async(req, res) =>{
 
   res.json({
     messages
+  })
+})
+
+
+app.get("/room/:slug", async(req, res) =>{
+  const slug = req.params.slug as string;
+
+  const room = await db.query.rooms.findFirst({
+    where: eq(rooms.slug, slug)
+  })
+
+  if(!room){
+    return res.status(411).json({
+      message: "Room not found"
+    })
+  }
+
+  res.json({
+    room
   })
 })
 
