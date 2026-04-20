@@ -2,7 +2,7 @@
 import { Button } from "@repo/ui/Button";
 const AuthPage = ({isSignIn}: {isSignIn : boolean}) =>{
     return (
-        <div className="flex  justify-center items-center w-screen h-screen">
+        <div className="flex  justify-center items-center w-screen h-screen bg-black">
             <div className="bg-white flex flex-col justify-center items-center rounded-2xl p-3">
                 <div className="p-2 m-2 rounded">
                 <h1 className="text-4xl font-bold">{isSignIn ? "Sign In" : "Sign Up"}</h1>

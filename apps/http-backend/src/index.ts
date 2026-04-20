@@ -6,9 +6,11 @@ import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import { JWT_SECRET } from "@repo/backend-common/config";
 import { middleware } from "./middleware";
+import cors from "cors"
 
 const app = express();
 app.use(express.json());
+app.use(cors())
 
 app.post("/signup", async (req, res) => {
   const parsedData = CreateUserSchema.safeParse(req.body);
