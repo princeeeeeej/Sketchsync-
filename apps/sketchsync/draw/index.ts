@@ -1,106 +1,45 @@
-import { HTTP_BACKEND } from "@/app/config";
+import { BACKEND_URL } from "@/app/config";
+import { Shapes } from "@/lib/types";
 
-type Shapes = {
-    type: "rect",
-    x: number,
-    y: number,
-    width: number,
-    height: number
-} | {
-    type: "circle",
-    x: number,
-    y: number,
-    radius: number
-}
-
-export async function initDraw( canvas: HTMLCanvasElement, roomId: string, socket: WebSocket){
-    const ctx = canvas.getContext("2d");
-
-    let existingShapes: Shapes[] = await getExistingShapes(roomId)
-
-    if(!ctx){
-        return 
+export function clearCanvas(
+  existingShapes: Shapes[],
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "rgb(18, 18, 18)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  existingShapes.forEach((shape) => {
+    ctx.strokeStyle = "rgb(255, 255, 255)";
+    if (shape.type === "rect") {
+      ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
+    } else if (shape.type === "circle") {
+      ctx.beginPath();
+      ctx.arc(shape.centerX, shape.centerY, shape.radius, 0, 2 * Math.PI);
+      ctx.stroke();
+    } else if (shape.type === "line") {
+      ctx.beginPath();
+      ctx.moveTo(shape.x1, shape.y1);
+      ctx.lineTo(shape.x2, shape.y2);
+      ctx.stroke();
     }
-
-    socket.onmessage = (event) => {
-        const message = JSON.parse(event.data)
-        if(message.type === "chat"){
-            const parsedShape = JSON.parse(message.message);
-            existingShapes.push(parsedShape.shape)
-            clearCanvas(existingShapes, canvas, ctx)
-        }
+    else if (shape.type === "text") {
+      ctx.fillStyle = "rgb(255,255,255)"
+      ctx.font = `${shape.fontSize ?? 16}px monospace`
+      shape.text.split("\n").forEach((line, i) => {
+          ctx.fillText(line, shape.x, shape.y + i * (shape.fontSize ?? 16) * 1.2)
+      })
     }
-
-    let clicked = true;
-    let startX = 0;
-    let startY = 0;
-
-    canvas.addEventListener("mousedown", (e) => {
-        clicked = true;
-        startX = e.offsetX;
-        startY = e.offsetY;
-    })
-
-    canvas.addEventListener("mouseup", (e) => {
-        clicked = false;
-        const width = e.offsetX - startX;
-        const height = e.offsetY - startY;
-        existingShapes.push({
-            type: "rect",
-            x: startX,
-            y: startY,
-            width,
-            height
-        });
-
-        socket.send(JSON.stringify({
-            roomId,
-            type: "chat",
-            message: JSON.stringify({
-                shape: {
-                type: "rect",
-                x: startX,
-                y: startY,
-                width,
-                height
-                }
-            })
-        }))
-
-    })
-
-    canvas.addEventListener("mousemove", (e) => {
-        if(clicked){
-            const width = e.offsetX - startX;
-            const height = e.offsetY - startY;
-            clearCanvas(existingShapes, canvas, ctx)
-            ctx.strokeStyle = "rgb(255, 255, 255)"
-            ctx.strokeRect(startX, startY, width, height)
-        }
-    })
+  });
 }
 
-function clearCanvas(existingShapes: Shapes[], canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D){
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.fillStyle = "rgb(0, 0, 0)",
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-    existingShapes.map((shape) =>{
-        if(shape.type === "rect"){
-            ctx.strokeStyle = "rgb(255, 255, 255)"
-            ctx.strokeRect(shape.x, shape.y, shape.width, shape.height)
-        }
-    })
-}
-
-async function getExistingShapes(roomId: string){
-    const res = await fetch(`${HTTP_BACKEND}/chats/${roomId}`)
-    const data = await res.json().then((res) => res.messages)
-
-    const shapes = data.map((x: {message:string}) => {
-        const messageData = JSON.parse(x.message)
-        return messageData.shape
-    })
-
-    return shapes
+export async function getExistingShapes(roomId: string): Promise<Shapes[]> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/canvas/${roomId}`);
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.elements ?? [];
+  } catch {
+    return [];
+  }
 }

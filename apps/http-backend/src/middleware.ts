@@ -8,6 +8,7 @@ export interface AuthRequest extends Request {
 
 export const middleware = (req: AuthRequest, res: Response, next: NextFunction): void => {
     const token = req.headers["authorization"];
+    console.log(token);
     if (!token) {
         res.status(403).json({ message: "Unauthorized" });
         return;

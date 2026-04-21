@@ -1,7 +1,7 @@
 import express from "express"
 import "dotenv/config"; 
 import { CreateRoomSchema, CreateUserSchema, SigninSchema} from "@repo/common/types"
-import { db, users, eq, rooms, chats, desc} from "@repo/db/client"
+import { db, users, eq, rooms, desc, canvasSnapshots} from "@repo/db/client"
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import { JWT_SECRET } from "@repo/backend-common/config";
@@ -15,37 +15,39 @@ app.use(cors())
 app.post("/signup", async (req, res) => {
   const parsedData = CreateUserSchema.safeParse(req.body);
   if (!parsedData.success) {
-    return res.json({ message: "Incorrect inputs" });
+    console.log("Validation failed:", parsedData.error);
+    return res.status(400).json({ message: "Incorrect inputs" });
   }
 
   try {
     const hashedPassword = await bcrypt.hash(parsedData.data.password, 10);
     
     const user = await db.insert(users).values({
-      email: parsedData.data.username,
+      email: parsedData.data.email,
       password: hashedPassword,
-      name: parsedData.data.name,
+      name: parsedData.data.username,
     }).returning({ id: users.id });
 
     //@ts-ignore
     res.json({ userId: user[0].id });
   } catch (e) {
-    res.status(411).json({ message: "User already exists with the username" });
+    console.error("Signup error:", e);
+    res.status(411).json({ message: "User already exists with the email" });
   }
 });
 
 app.post("/signin", async(req, res) =>{
   const parsedData = SigninSchema.safeParse(req.body);
   if (!parsedData.success) {
-    return res.json({ message: "Incorrect inputs" });
+    return res.status(400).json({ message: "Incorrect inputs" });
   }
 
   const user = await db.query.users.findFirst({
-    where: eq(users.email, parsedData.data.username)
+    where: eq(users.email, parsedData.data.email)
   })
 
   if(!user){
-    return res.status(411).json({
+    return res.status(403).json({
       message: "User not found"
     })
   }
@@ -76,51 +78,62 @@ app.post("/room",middleware, async(req, res) => {
   //@ts-ignore
   const userId = req.userId;
 
-  const roomId = await db.insert(rooms).values({
-    slug: parsedData.data.name,
-    adminId: userId
-  }).returning({ id: rooms.id })
+  try {
+    const roomId = await db.insert(rooms).values({
+      slug: parsedData.data.name,
+      adminId: userId
+    }).returning({ id: rooms.id })
 
-  
-  res.json({
-    //@ts-ignore
-    roomId: roomId[0].id
-  })
-
+    res.json({
+      //@ts-ignore
+      roomId: roomId[0].id
+    })
+  } catch (e) {
+    console.error("Room creation error:", e);
+    res.status(411).json({
+      message: "Room already exists with this name"
+    })
+  }
 })
 
-app.get("/chats/:roomId", async(req, res) =>{
+app.get("/room/:roomId",middleware, async (req, res) => {
   const roomId = Number(req.params.roomId);
-
-  const messages = await db.query.chats.findMany({
-    where: eq(chats.roomId, roomId),
-    limit: 50,
-    orderBy: desc(chats.id)
+  const data = await db.query.canvasSnapshots.findMany({
+    where: eq(canvasSnapshots.roomId, roomId),
+    orderBy: desc(canvasSnapshots.id)
   })
 
-  res.json({
-    messages
-  })
-})
-
-
-app.get("/room/:slug", async(req, res) =>{
-  const slug = req.params.slug as string;
-
-  const room = await db.query.rooms.findFirst({
-    where: eq(rooms.slug, slug)
-  })
-
-  if(!room){
-    return res.status(411).json({
-      message: "Room not found"
+  if(!data){
+    return res.status(404).json({
+      message: "No data found"
     })
   }
 
   res.json({
-    room
+    data
+  })
+
+})
+app.get("/canvas/:roomId", async (req, res) => {
+  const roomId = Number(req.params.roomId)
+
+  if (isNaN(roomId)) {
+    return res.status(400).json({ message: "Invalid roomId" })
+  }
+
+  const snapshot = await db.query.canvasSnapshots.findFirst({
+    where: eq(canvasSnapshots.roomId, roomId)
+  })
+
+  if (!snapshot) {
+    return res.json({ elements: [] })  // new room — empty canvas, not 404
+  }
+
+  res.json({
+    elements: (snapshot.data as any).elements ?? []
   })
 })
+
 
 app.listen(3001, () =>{
     console.log("server is running")
