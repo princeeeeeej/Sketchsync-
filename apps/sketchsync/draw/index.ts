@@ -4,7 +4,7 @@ import { Shapes } from "@/lib/types";
 export function clearCanvas(
   existingShapes: Shapes[],
   canvas: HTMLCanvasElement,
-  ctx: CanvasRenderingContext2D,
+  ctx: CanvasRenderingContext2D
 ) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "rgb(18, 18, 18)";
@@ -29,6 +29,15 @@ export function clearCanvas(
       shape.text.split("\n").forEach((line, i) => {
           ctx.fillText(line, shape.x, shape.y + i * (shape.fontSize ?? 16) * 1.2)
       })
+    }
+    else if (shape.type === "pen") {
+      if (shape.points.length < 2) return
+      ctx.beginPath()
+      ctx.moveTo(shape.points[0].x, shape.points[0].y)
+      shape.points.forEach((point) => {
+        ctx.lineTo(point.x, point.y)
+      })
+      ctx.stroke()
     }
   });
 }

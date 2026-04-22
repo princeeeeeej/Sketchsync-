@@ -16,7 +16,7 @@ const wsToUser = new Map<WebSocket, User>()
 // roomId → connected websockets
 const roomToClients = new Map<number, Set<WebSocket>>()
 
-// ─── AUTH ─────────────────────────────────────────────
+// AUTH 
 
 const checkUser = (token: string): string | null => {
   try {
@@ -28,7 +28,7 @@ const checkUser = (token: string): string | null => {
   }
 }
 
-// ─── HELPERS ──────────────────────────────────────────
+// HELPERS
 
 const joinRoom = (ws: WebSocket, roomId: number) => {
   const user = wsToUser.get(ws)
@@ -88,7 +88,7 @@ const saveSnapshot = async (roomId: number, elements: any) => {
     })
 }
 
-// ─── CONNECTION ───────────────────────────────────────
+// CONNECTION 
 
 wss.on('connection', (ws, request) => {
   const url = request.url
@@ -101,7 +101,7 @@ wss.on('connection', (ws, request) => {
 
   wsToUser.set(ws, { userId, rooms: new Set() })
 
-  // ─── MESSAGES ───────────────────────────────────────
+  // MESSAGES
 
   ws.on("message", async (raw) => {
     let parsedData: any;
@@ -186,7 +186,7 @@ wss.on('connection', (ws, request) => {
     }
   })
 
-  // ─── DISCONNECT ─────────────────────────────────────
+  // DISCONNECT
 
   ws.on("close", () => {
     const user = wsToUser.get(ws)
