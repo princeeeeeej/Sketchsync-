@@ -40,4 +40,4 @@ export type Pen = BaseShape & {
   points: {x: number , y: number}[]
 }
 
-export type Tool = "pointer" | "rect" | "circle" | "line" | "text" | "pen" | "eraser"
+export type Tool = "pointer" | "rect" | "circle" | "line" | "text" | "pen" | "eraser" | "hand"

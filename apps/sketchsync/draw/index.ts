@@ -4,11 +4,17 @@ import { Shapes } from "@/lib/types";
 export function clearCanvas(
   existingShapes: Shapes[],
   canvas: HTMLCanvasElement,
-  ctx: CanvasRenderingContext2D
+  ctx: CanvasRenderingContext2D,
+  panX: number,
+  panY: number,
+  zoom: number
 ) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "rgb(18, 18, 18)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.save()
+  ctx.translate(panX, panY)
+  ctx.scale(zoom, zoom)
   existingShapes.forEach((shape) => {
     ctx.strokeStyle = "rgb(255, 255, 255)";
     if (shape.type === "rect") {
@@ -40,6 +46,7 @@ export function clearCanvas(
       ctx.stroke()
     }
   });
+  ctx.restore()
 }
 
 export async function getExistingShapes(roomId: string): Promise<Shapes[]> {
