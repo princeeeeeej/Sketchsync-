@@ -32,7 +32,6 @@ export default function RoomCanvas({ roomId }: { roomId: string }) {
     return (
         <div>
             <Canvas roomId={roomId} socket={webSocket}/>
-
         </div>
     )
 }
