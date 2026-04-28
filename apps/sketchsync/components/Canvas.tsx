@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CanvasManager } from "./canvas/CanvasManager";
-import { Tool } from "./canvas/types";
+import { CanvasManager } from "../canvas/CanvasManager";
+import { Tool } from "../canvas/types";
 import { ToolBar } from "./ToolBaar";
 import { BACKEND_URL } from "@/app/config";
 
@@ -132,12 +132,12 @@ export default function Canvas({
             top: textInput.screenY,
             fontSize: "16px",
             fontFamily: "monospace",
-            minWidth: "100px", // ← make wider
-            minHeight: "30px", // ← make taller
+            minWidth: "100px", 
+            minHeight: "30px", 
             lineHeight: "1.2",
             caretColor: "white",
-            border: "1px solid red", // ← temporary visible border
-            zIndex: 1000, // ← ensure on top
+            border: "1px solid red", 
+            zIndex: 1000, 
           }}
           value={textInput.value}
           onChange={(e) =>
